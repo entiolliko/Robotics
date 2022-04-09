@@ -5,12 +5,12 @@
 
 class node1{
 
-
+//Testing
 
 private :
 	ros::NodeHandle n;
 	ros::Subscriber pose_listener ;
-	float x ;	
+	float x ;
 
 public :
 
@@ -21,15 +21,15 @@ public :
 		this->x = 0;
 		    }
 
-	
-	
+
+
 	void main_loop(){
 
 		ros::Rate loop_rate(10);
 		while(ros::ok())
 		{
 			ros::spinOnce();
-		
+
 		}
 
 
@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 {
 
 	ros::init(argc,argv,"node1");
-	
+
 	node1 test_node;
 	test_node.main_loop();
    //	ros::Publisher cmd_vel = n.advertise<geometry_msgs::Twist>("cmd_vel",1000);
