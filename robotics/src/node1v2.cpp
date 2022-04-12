@@ -4,44 +4,38 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/TwistStamped.h"
 #include <vector>
-
+using namespace std;
 
 class node1{
 
 private :
 	ros::NodeHandle n;
-	ros::Subscriber pose_listener ;
+	ros::Subscriber pose_listener;
 	ros::Publisher vel_publisher;
-
-	std::vector<float64> position;
-	std::vector<float64> orientation;
 
 	std::vector<float64> linear_velocity;
 	std::std::vector<float64> angular_velocity;
 
 	geometry_msgs::TwistStamped out_msg;
-	bool flag;
+	bool readFromBag;
 
 public :
 	node1(){
+		//TODO: Perché hai usato un puntatore per il poseCallback e perché hai messo this?
 		this->pose_listener = this-> n.subscribe("/robot/pose",1000,&node1::poseCallback,this);
-		this->vel_publisher = this-> n.advertise<geometry_msgs/TwistStamped>("cmd_vel",1000);
-
-		this->position.insert(position.begin(), 3, 0);
-		this->orientation.insert(orientation.begin(), 4,0);
-
+		this->vel_publisher = this-> n.advertise<geometry_msgs::TwistStamped>("cmd_vel",1000);
 		this->linear_velocity.insert(linear_velocity.begin(), 3, 0);
-		this->angular_velocity.insert(angular_velocity.begin(), 3,0);
-		flag = false;
+		this->angular_velocity.insert(angular_velocity.begin(), 4, 0);
+		this->readFromBag = false;
 		}
 
 	void main_loop(){
 		ros::Rate loop_rate(10);
 
 		while(ros::ok()){
-			if(flag){
+			if(readFromBag){
 				this->vel_publisher.publish(out_msg);
-				this->flag = false;
+				this->readFromBag = false;
 			}
 			ros::spinOnce();
 		}
@@ -63,15 +57,19 @@ public :
 		calculate_data();
 	}
 
+	//TODO: Fare l'implementazione delle formule in tick
 	void calculate_data()
 	{
-		this-> flag = true;
+
+		this-> readFromBag = true;
 	}
 
+	//TODO: Fare l'implementazione dell'approssimazione di Euler
 	void calculate_euler(){
 
 	}
 
+	//TODO: Fare l'implementazione dell'approssimazione di Runga-Tunga
 	void calculate_rk(){
 
 
