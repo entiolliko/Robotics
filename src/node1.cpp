@@ -8,11 +8,14 @@
 #include <vector>
 
 
-
+//dynamic reconfigure
+#include <project1/parametersConfig.h>
+#include <dynamic_reconfigure/server.h>
 
 enum integrationMethod{
 	Euler, RK
 };
+//-----------------------------
 
 
 
@@ -33,6 +36,14 @@ private :
 	geometry_msgs::TwistStamped out_msg;
 
 	bool flag;
+
+	//-------------------------------------------
+	integrationMethod mode;
+	//dynamic reconfigure server declaration
+	dynamic_reconfigure::Server<project1::parametersConfig> method_server;
+	dynamic_reconfigure::Server<project1::parametersConfig>::CallbackType method_callback;
+	//---------------------------------------
+
 
 public :
 	node1(){
@@ -55,7 +66,27 @@ public :
 			wheel_velocity[i].data = zeroInF.data;
 		}
 		flag = false;
+
+
+		//dynamic reconfigure --------------------
+		mode = Euler;
+		method_callback = boost::bind(&node1::setMode, this, _1, _2);
+        method_server.setCallback(method_callback);
+        //----------------------------------------
 		}
+
+
+	//this function sets the mode to Euler or RK
+	//we need to add the second parameter to this function also
+	void setMode(project1::parametersConfig &config, uint32_t level){
+		switch(config.odomMethod){
+			case 0: mode = Euler; break;
+			case 1: mode = RK; break;
+			//default: break;
+		}
+	}//-------------------------------------------------------------------
+
+
 
 	void main_loop(){
 		ros::Rate loop_rate(10);
