@@ -1,0 +1,5 @@
+<launch>
+
+    <node pkg="project1" type="node1" name="test_node" output="screen" />
+
+</launch>
