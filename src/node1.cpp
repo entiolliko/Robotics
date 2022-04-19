@@ -8,6 +8,14 @@
 #include <vector>
 
 
+
+
+enum integrationMethod{
+	Euler, RK
+};
+
+
+
 class node1{
 
 private :
@@ -23,6 +31,7 @@ private :
 	std_msgs::Float64 wheel_velocity[4];
 
 	geometry_msgs::TwistStamped out_msg;
+
 	bool flag;
 
 public :
@@ -45,7 +54,6 @@ public :
 			wheel_position[i].data = zeroInF.data;
 			wheel_velocity[i].data = zeroInF.data;
 		}
-
 		flag = false;
 		}
 
@@ -66,13 +74,13 @@ public :
 	}
 
 	void poseCallback(const geometry_msgs::PoseStamped::ConstPtr& in_msg){
-		//ROS_INFO("I heard [%f]",msg->pose.position.x);
+		ROS_INFO("I heard [%f]",in_msg->pose.position.x);
 		this->position[0].data = in_msg->pose.position.x;
 		this->position[1].data = in_msg->pose.position.y;
 		this->position[2].data = in_msg->pose.position.z;
-    this->orientation[0].data = in_msg->pose.orientation.x;
+    	this->orientation[0].data = in_msg->pose.orientation.x;
 		this->orientation[1].data = in_msg->pose.orientation.y;
-    this->orientation[2].data = in_msg->pose.orientation.z;
+    	this->orientation[2].data = in_msg->pose.orientation.z;
 		this->orientation[3].data = in_msg->pose.orientation.w;
 		//Qua dobbiamo capire un po cosa fare con la posizione e la orientazione
 	}
@@ -83,7 +91,6 @@ public :
 			this->wheel_position[i].data = in_msg->position[i];
 			this->wheel_velocity[i].data = in_msg->velocity[i];
 		}
-
 		calculate_data();
 	}
 
