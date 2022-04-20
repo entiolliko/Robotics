@@ -151,9 +151,9 @@ public :
 	//started with the formulas, they are not correct they need some factor multiplying
 	void calculate_data()
 	{
-		double vx = (wheel_radius/4)*(wheels.position[0] + wheels.position[1] + wheels.position[2] + wheels.position[3]);
-		double vy = (wheel_radius/4)*(-wheels.position[0] + wheels.position[1] + wheels.position[2] - wheels.position[3]);
-		double omega  = (wheel_radius/4)*(1/(w+l))*(- wheels.position[0] + wheels.position[1] - wheels.position[2] + wheels.position[3]);
+		double vx = (wheel_radius/4)*(wheels.velocity[0] + wheels.velocity[1] + wheels.velocity[2] + wheels.velocity[3]);
+		double vy = (wheel_radius/4)*(-wheels.velocity[0] + wheels.velocity[1] + wheels.velocity[2] - wheels.velocity[3]);
+		double omega  = (wheel_radius/4)*(1/(w+l))*(- wheels.velocity[0] + wheels.velocity[1] - wheels.position[2] + wheels.position[3]);
 		
 		out_msg.header.frame_id = "";
 		out_msg.header.stamp = ros::Time::now();
