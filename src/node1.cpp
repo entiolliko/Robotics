@@ -11,6 +11,7 @@
 //dynamic reconfigure
 #include <project1/parametersConfig.h>
 #include <dynamic_reconfigure/server.h>
+#include <math.h>
 
 enum integrationMethod{
 	Euler, RK
@@ -30,8 +31,13 @@ private :
 	std::vector<std_msgs::Float64> position;
 	std::vector<std_msgs::Float64> orientation;
 
-	std_msgs::Float64 wheel_position[4];
-	std_msgs::Float64 wheel_velocity[4];
+
+	//create a message to read both velocity and position vectors
+	sensor_msgs::JointState wheels;
+	float wheel_radius;
+	float w;
+	float l;
+
 
 	geometry_msgs::TwistStamped out_msg;
 
@@ -61,12 +67,21 @@ public :
 			std_msgs::Float64 zeroInF;
 			zeroInF.data = 0.0;
 			this->orientation.push_back(zeroInF);
-
-			wheel_position[i].data = zeroInF.data;
-			wheel_velocity[i].data = zeroInF.data;
 		}
+
 		flag = false;
 
+
+
+		//robot parameters we can move somewhere else
+		wheel_radius = 0.07;
+		w = 0.169;
+		l = 0.200;
+		//inizialize our vectors
+		for(int i=0; i<4;i ++){
+			this->wheels.velocity.push_back(0.0);
+			this->wheels.position.push_back(0.0);
+		}
 
 		//dynamic reconfigure --------------------
 		mode = Euler;
@@ -94,6 +109,12 @@ public :
 		while(ros::ok()){
 			if(flag){
 				this->vel_publisher.publish(out_msg);
+				ROS_INFO("Ho pubblicato Questi Dati");
+			    ROS_INFO("linear vale %f",out_msg.twist.linear.x);
+			    ROS_INFO("linear vale %f",out_msg.twist.linear.y);
+				ROS_INFO("angular vale %f",out_msg.twist.angular.z);
+	
+
 				this->flag = false;
 			}
 			ros::spinOnce();
@@ -105,7 +126,7 @@ public :
 	}
 
 	void poseCallback(const geometry_msgs::PoseStamped::ConstPtr& in_msg){
-		ROS_INFO("I heard [%f]",in_msg->pose.position.x);
+		//ROS_INFO("I heard [%f]",in_msg->pose.position.x);
 		this->position[0].data = in_msg->pose.position.x;
 		this->position[1].data = in_msg->pose.position.y;
 		this->position[2].data = in_msg->pose.position.z;
@@ -117,18 +138,40 @@ public :
 	}
 
 	void wheel_statesCallback(const sensor_msgs::JointState::ConstPtr& in_msg){
-
+		
 		for(int i = 0; i < 4; i++){
-			this->wheel_position[i].data = in_msg->position[i];
-			this->wheel_velocity[i].data = in_msg->velocity[i];
+			wheels.velocity[i]= in_msg->velocity[i];
+			wheels.position[i]= in_msg->position[i];
 		}
+
 		calculate_data();
 	}
 
+
+	//started with the formulas, they are not correct they need some factor multiplying
 	void calculate_data()
 	{
+		double vx = (wheel_radius/4)*(wheels.position[0] + wheels.position[1] + wheels.position[2] + wheels.position[3]);
+		double vy = (wheel_radius/4)*(-wheels.position[0] + wheels.position[1] + wheels.position[2] - wheels.position[3]);
+		double omega  = (wheel_radius/4)*(1/(w+l))*(- wheels.position[0] + wheels.position[1] - wheels.position[2] + wheels.position[3]);
 		
+		out_msg.header.frame_id = "";
+		out_msg.header.stamp = ros::Time::now();
+
+		out_msg.twist.linear = toVector3(vx, vy, 0);
+		out_msg.twist.angular = toVector3(0, 0, omega);
+
+
 		this-> flag = true;
+	}
+
+	//this function returns three values inside a Vector3 type
+	geometry_msgs::Vector3 toVector3(double a,double b, double c){
+		geometry_msgs::Vector3 tmp;
+		tmp.x = a;
+		tmp.y = b;
+		tmp.z = c;
+		return tmp;
 	}
 
 	void calculate_euler(){
