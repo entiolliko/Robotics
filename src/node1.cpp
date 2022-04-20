@@ -153,7 +153,7 @@ public :
 	{
 		double vx = (wheel_radius/4)*(wheels.velocity[0] + wheels.velocity[1] + wheels.velocity[2] + wheels.velocity[3]);
 		double vy = (wheel_radius/4)*(-wheels.velocity[0] + wheels.velocity[1] + wheels.velocity[2] - wheels.velocity[3]);
-		double omega  = (wheel_radius/4)*(1/(w+l))*(- wheels.velocity[0] + wheels.velocity[1] - wheels.position[2] + wheels.position[3]);
+		double omega  = (wheel_radius/4)*(1/(w+l))*(- wheels.velocity[0] + wheels.velocity[1] - wheels.velocity[2] + wheels.velocity[3]);
 		
 		out_msg.header.frame_id = "";
 		out_msg.header.stamp = ros::Time::now();
