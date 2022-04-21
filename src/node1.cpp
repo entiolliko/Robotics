@@ -12,6 +12,9 @@
 #include <project1/parametersConfig.h>
 #include <dynamic_reconfigure/server.h>
 #include <math.h>
+#include <project1/message1.h>
+#include <project1/Reset.h>
+
 
 enum integrationMethod{
 	Euler, RK
@@ -37,6 +40,11 @@ private :
 	float wheel_radius;
 	float w;
 	float l;
+	//initial pose of the robot, can be modified by the reset_callback function
+	double inX;
+	double inY;
+	double inTheta;
+	ros::Time lastTime;
 
 
 	geometry_msgs::TwistStamped out_msg;
@@ -45,14 +53,30 @@ private :
 
 	//-------------------------------------------
 	integrationMethod mode;
+
 	//dynamic reconfigure server declaration
 	dynamic_reconfigure::Server<project1::parametersConfig> method_server;
 	dynamic_reconfigure::Server<project1::parametersConfig>::CallbackType method_callback;
 	//---------------------------------------
+	//declaration of resetService
+	ros::ServiceServer resetService;
+
+
 
 
 public :
 	node1(){
+
+		lastTime = ros::Time::now();
+		n.getParam("initialX", inX);
+		n.getParam("initialY", inY);
+		n.getParam("initialTheta", inTheta);
+		mode = Euler;
+
+
+
+
+
 		this->pose_listener = this-> n.subscribe("/robot/pose",1000,&node1::poseCallback,this);
 		this->wheel_states_listener = this-> n.subscribe("/wheel_states",1000,&node1::wheel_statesCallback,this);
 		this->vel_publisher = this-> n.advertise<geometry_msgs::TwistStamped>("cmd_vel",1000);
@@ -84,11 +108,22 @@ public :
 		}
 
 		//dynamic reconfigure --------------------
-		mode = Euler;
 		method_callback = boost::bind(&node1::setMode, this, _1, _2);
         method_server.setCallback(method_callback);
         //----------------------------------------
+		this->resetService = this->n.advertiseService("reset",&node1::reset_callback, this);
+
 		}
+
+
+	bool reset_callback(project1::Reset::Request &req, project1::Reset::Response &res){
+		inX = req.reset_x;
+		inY = req.reset_y;
+		inTheta = req.reset_theta;
+		lastTime = ros::Time::now();
+		return true;
+	}
+
 
 
 	//this function sets the mode to Euler or RK
