@@ -209,10 +209,10 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-add_executable(node1 src/node1.cpp)
-add_dependencies(node1 project1_generate_messages_cpp)
-add_dependencies(node1  ${catkin_EXPORTED_TARGETS})
-add_dependencies(node1 ${PROJECT_NAME}_gencfg)
-target_link_libraries(node1 ${catkin_LIBRARIES})
+add_executable(TwistCalculator src/TwistCalculator.cpp)
+add_dependencies(TwistCalculator project1_generate_messages_cpp)
+add_dependencies(TwistCalculator  ${catkin_EXPORTED_TARGETS})
+add_dependencies(TwistCalculator ${PROJECT_NAME}_gencfg)
+target_link_libraries(TwistCalculator ${catkin_LIBRARIES})
 
 #
