@@ -108,10 +108,10 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES project1
   CATKIN_DEPENDS
-	roscpp
-	#rospy
-	std_msgs
-	geometry_msgs
+  roscpp
+  #rospy
+  std_msgs
+  geometry_msgs
   message_runtime
 #  DEPENDS system_lib
 )
@@ -211,9 +211,16 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 add_executable(TwistCalculator src/TwistCalculator.cpp)
-add_dependencies(TwistCalculator project1_generate_messages_cpp)
+add_executable(WheelSpeedCalculator src/WheelSpeedCalculator.cpp)
+
+#add_dependencies(TwistCalculator project1_generate_messages_cpp)
 add_dependencies(TwistCalculator  ${catkin_EXPORTED_TARGETS})
 add_dependencies(TwistCalculator ${PROJECT_NAME}_gencfg)
+
+add_dependencies(WheelSpeedCalculator project1_generate_messages_cpp)
+add_dependencies(WheelSpeedCalculator  ${catkin_EXPORTED_TARGETS})
+
 target_link_libraries(TwistCalculator ${catkin_LIBRARIES})
+target_link_libraries(WheelSpeedCalculator ${catkin_LIBRARIES})
 
 #
