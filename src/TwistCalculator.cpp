@@ -5,6 +5,9 @@
 #include "geometry_msgs/TwistStamped.h"
 #include "sensor_msgs/JointState.h"
 #include <std_msgs/Float64.h>
+
+#include "data.h"
+
 #include <vector>
 
 
