@@ -28,8 +28,6 @@ public :
 		flag = false;
 	}
 
-
-
 	void main_loop(){
 		ros::Rate loop_rate(10);
 

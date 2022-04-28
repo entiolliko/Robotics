@@ -214,6 +214,7 @@ add_executable(TwistCalculator src/TwistCalculator.cpp)
 add_executable(WheelSpeedCalculator src/WheelSpeedCalculator.cpp)
 add_executable(OdometryCalculator src/OdometryCalculator.cpp)
 add_executable(InitialPose src/InitialPoseClient.cpp)
+add_executable(Params src/Params.cpp)
 
 #add_dependencies(TwistCalculator project1_generate_messages_cpp)
 add_dependencies(TwistCalculator  ${catkin_EXPORTED_TARGETS})
@@ -227,10 +228,15 @@ add_dependencies(OdometryCalculator  ${catkin_EXPORTED_TARGETS})
 
 add_dependencies(InitialPose ${catkin_EXPORTED_TARGETS})
 
+add_dependencies(Params project1_generate_messages_cpp)
+add_dependencies(Params ${PROJECT_NAME}_gencfg)
+add_dependencies(Params ${catkin_EXPORTED_TARGETS})
+
 target_link_libraries(TwistCalculator ${catkin_LIBRARIES})
 target_link_libraries(WheelSpeedCalculator ${catkin_LIBRARIES})
 target_link_libraries(OdometryCalculator ${catkin_LIBRARIES})
 target_link_libraries(InitialPose ${catkin_LIBRARIES})
+target_link_libraries(Params ${catkin_LIBRARIES})
 
 
 #

@@ -25,7 +25,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        ROS_ERROR("Failed to call service set_odom");
+        ROS_ERROR("Failed to call service reset");
         return 1;
     }
     return 0;
