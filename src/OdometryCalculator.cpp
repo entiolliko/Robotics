@@ -1,66 +1,215 @@
-#include "ros/ros.h"
+// #include "ros/ros.h"
+// #include "std_msgs/String.h"
+// #include "geometry_msgs/TwistStamped.h"
+// #include "nav_msgs/Odometry.h"
+// #include <project1/parametersConfig.h>
+// #include <sstream>
+// #include <std_msgs/Float64.h>
+// #include <vector>
+//
+//
+// class OdometryCalculator{
+//
+// private :
+// 	ros::NodeHandle n;
+// 	ros::Subscriber robot_speed_listener;
+// 	ros::Publisher odom_topic;
+//
+// 	nav_msgs::Odometry out_msg;
+//
+// 	bool flag;
+//
+// public :
+// 	OdometryCalculator()
+// 	{
+// 		this->robot_speed_listener = this-> n.subscribe("/cmd_vel",1000,&OdometryCalculator::robot_speed_listenerCallback,this);
+// 		this->odom_topic = this -> n.advertise<nav_msgs::Odometry>("/odom",1000);
+//
+// 		flag = false;
+// 	}
+//
+// 	void main_loop(){
+// 		ros::Rate loop_rate(10);
+//
+// 		while(ros::ok()){
+// 			if(flag){
+//
+//
+// 			flag = false;
+// 			}
+//
+// 		ros::spinOnce();
+// 		}
+// 	}
+//
+// 	void robot_speed_listenerCallback(const geometry_msgs::TwistStamped::ConstPtr& in_msg)
+// 	{
+//
+// 	}
+//
+// 	void calculateEuler(){
+//
+// 	}
+//
+// 	void calculateRK(){
+//
+// 	}
+//
+// };
+//
+//
+// int main(int argc, char** argv){
+// 	ros::init(argc,argv,"OdometryCalculator");
+//
+// 	OdometryCalculator test_node;
+// 	test_node.main_loop();
+// }
+
+#include <ros/ros.h>
+#include <tf/transform_broadcaster.h>
+#include <nav_msgs/Odometry.h>
 #include "std_msgs/String.h"
-#include "geometry_msgs/TwistStamped.h"
-#include "nav_msgs/Odometry.h"
-#include <project1/parametersConfig.h>
 #include <sstream>
-#include <std_msgs/Float64.h>
-#include <vector>
+#include <dynamic_reconfigure/server.h>
+#include "project1/parametersConfig.h"
+#include "project1/Reset.h"
+
+class OdometryCalculator {
+
+private:
+    ros::NodeHandle n; //The handler of the current node
+    ros::Subscriber sub; // The subscripter to the /cmd_vel topic
+    ros::Publisher odom_pub;
+    ros::ServiceServer resetPoseService;
+
+    ros::Time lastTime;
+    double x = 0.0;
+		double y = 0.0;
+		double th = 0.0;
+    tf::TransformBroadcaster odom_broadcaster;
+
+    int integrationType;
 
 
-class OdometryCalculator{
+public:
+    OdometryCalculator() {
+        sub = n.subscribe("/cmd_vel", 1000, &OdometryCalculator::computeOdometry, this);
 
-private :
-	ros::NodeHandle n;
-	ros::Subscriber robot_speed_listener;
-	ros::Publisher odom_topic;
+        odom_pub = n.advertise<nav_msgs::Odometry>("/odom", 1000);
 
-	nav_msgs::Odometry out_msg;
+        resetPoseService = n.advertiseService("resetposeService" , &OdometryCalculator::resetPose, this);
 
-	bool flag;
+        lastTime = ros::Time::now();
 
-public :
-	OdometryCalculator()
-	{
-		this->robot_speed_listener = this-> n.subscribe("/cmd_vel",1000,&OdometryCalculator::robot_speed_listenerCallback,this);
-		this->odom_topic = this -> n.advertise<nav_msgs::Odometry>("/odom",1000);
+        integrationType = 0;
+    }
 
-		flag = false;
-	}
+    void computeOdometry(const geometry_msgs::TwistStamped::ConstPtr& msg){
+        double vx, vy, w, dt;
+        ros::Time currentTime;
 
-	void main_loop(){
-		ros::Rate loop_rate(10);
+        //Reads currentTime from message's header
+        currentTime = msg->header.stamp;
 
-		while(ros::ok()){
-			if(flag){
+        //Computes dt from last message
+        dt = (currentTime - lastTime).toSec();
+        //Computes reads linear and angular velocities from message
+        vx = msg->twist.linear.x;
+        vy = msg->twist.linear.y;
+        w = msg->twist.angular.z;
 
+        //IntegrationintegrationType
+        if(integrationType == 0) { //EULER#include "project1/CustomOdometry.h"
+            x += vx * cos(th) * dt;
+            y += vy * sin(th) * dt;
+            th += w * dt;
+        }
+        else if(integrationType == 1){ //RUNGE-KUTTA
+            x += vx * cos(th + w * dt / 2) * dt;
+            y += vy * sin(th + w * dt / 2) * dt;
+            th += w * dt;
+        }
 
-			flag = false;
-			}
+        //Publish tf transformation
+        publishTfTransformation(currentTime);
+        //Publish odometry message
+        publishOdometry(vx, vy, w, currentTime);
 
-		ros::spinOnce();
-		}
-	}
+        //Updates last time
+        lastTime= currentTime;
+    }
 
-	void robot_speed_listenerCallback(const geometry_msgs::TwistStamped::ConstPtr& in_msg)
-	{
+    void publishOdometry(double vx, double vy, double w, ros::Time currentTime){
+        nav_msgs::Odometry odometry;
+        geometry_msgs::Quaternion odometryQuaternion = tf::createQuaternionMsgFromYaw(th);
 
-	}
+        //set header
+        odometry.header.stamp = currentTime;
+        odometry.header.frame_id = "odom";
+        //set pose
+        odometry.pose.pose.position.x = x;
+        odometry.pose.pose.position.y = y;
+        odometry.pose.pose.position.z = 0.0;
+        odometry.pose.pose.orientation = odometryQuaternion;
+        //set velocity
+        odometry.child_frame_id = "baseLink";
+        odometry.twist.twist.linear.x = vx;
+        odometry.twist.twist.linear.y = vy;
+        odometry.twist.twist.linear.z = 0;
+        odometry.twist.twist.angular.x = 0;
+        odometry.twist.twist.angular.y = 0;
+        odometry.twist.twist.angular.z = w;
 
-	void calculateEuler(){
+        //publish odometry
+        odom_pub.publish(odometry);
+    }
 
-	}
+    void publishTfTransformation(ros::Time currentTime){
+        geometry_msgs::TransformStamped odometryTransformation;
+        geometry_msgs::Quaternion odometryQuaternion = tf::createQuaternionMsgFromYaw(th);
 
-	void calculateRK(){
+        //set header
+        odometryTransformation.header.stamp = currentTime;
+        odometryTransformation.header.frame_id = "odom";
+        odometryTransformation.child_frame_id = "base_link";
+        //set transformation
+        odometryTransformation.transform.translation.x = x;
+        odometryTransformation.transform.translation.y = y;
+        odometryTransformation.transform.translation.z = 0;
+        odometryTransformation.transform.rotation = odometryQuaternion;
 
-	}
+        //publish transformation
+        odom_broadcaster.sendTransform(odometryTransformation);
+    }
+
+    void setIntegration(project1::parametersConfig &config){
+        integrationType = config.odomMethod;
+    }
+
+    bool resetPose(project1::Reset::Request  &req,
+                   project1::Reset::Response &res)
+    {
+			x = req.reset_x;
+			y = req.reset_y;
+			th = req.reset_theta;
+			ROS_INFO("x reset to: %f", x);
+			ROS_INFO("y reset to: %f", y);
+			ROS_INFO("th reset to: %f", th);
+			return true;
+    }
 
 };
 
+int main(int argc, char **argv) {
+    ros::init(argc, argv, "AgileXCore");
+    OdometryCalculator pubSubOdometry;
 
-int main(int argc, char** argv){
-	ros::init(argc,argv,"OdometryCalculator");
+    dynamic_reconfigure::Server<project1::parametersConfig> server;
+    dynamic_reconfigure::Server<project1::parametersConfig>::CallbackType f;
 
-	OdometryCalculator test_node;
-	test_node.main_loop();
+    f = boost::bind(&OdometryCalculator::setIntegration, &pubSubOdometry, _1);
+    server.setCallback(f);
+
+    ros::spin();
+    return 0;
 }
