@@ -26,7 +26,7 @@ private :
 
 public :
 	TwistCalculator(){
-		this->wheel_states_listener = this-> n.subscribe("/wheel_states",1000,&TwistCalculator::wheel_statesCallback,this);
+		this->wheel_states_listener = this-> n.subscribe("/wheel_states",10000,&TwistCalculator::wheel_statesCallback,this);
 		this->vel_publisher = this-> n.advertise<geometry_msgs::TwistStamped>("cmd_vel",1000);
 
 	}

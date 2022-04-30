@@ -134,7 +134,7 @@ public:
 };
 
 int main(int argc, char **argv) {
-    ros::init(argc, argv, "AgileXCore");
+    ros::init(argc, argv, "OdometryCalculator");
     OdometryCalculator pubSubOdometry;
 
     dynamic_reconfigure::Server<project1::parametersConfig> server;
