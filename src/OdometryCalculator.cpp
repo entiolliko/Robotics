@@ -21,20 +21,18 @@ private:
 		double th = 0.0;
     tf::TransformBroadcaster odom_broadcaster;
 
-    int integrationType;
+    int integrationType = 0;
 
 
 public:
     OdometryCalculator() {
         sub = n.subscribe("/cmd_vel", 1000, &OdometryCalculator::computeOdometry, this);
-
         odom_pub = n.advertise<nav_msgs::Odometry>("/odom", 1000);
 
         resetPoseService = n.advertiseService("resetposeService" , &OdometryCalculator::resetPose, this);
 
         lastTime = ros::Time::now();
 
-        integrationType = 0;
     }
 
     void computeOdometry(const geometry_msgs::TwistStamped::ConstPtr& msg){
@@ -44,15 +42,20 @@ public:
         //Reads currentTime from message's header
         currentTime = msg->header.stamp;
 
+        unsigned long Ts_NSec =  currentTime.toNSec() - lastTime.toNSec();
+        dt = (double)Ts_NSec / 1000000000.0;
+        lastTime = currentTime;
+
         //Computes dt from last message
-        dt = (currentTime - lastTime).toSec();
+        //dt = (currentTime - lastTime).toSec();
+
         //Computes reads linear and angular velocities from message
         vx = msg->twist.linear.x;
         vy = msg->twist.linear.y;
         w = msg->twist.angular.z;
 
         //IntegrationintegrationType
-        if(integrationType == 0) { //EULER#include "project1/CustomOdometry.h"
+        if(integrationType == 0) { //EULER
             x += vx * cos(th) * dt;
             y += vy * sin(th) * dt;
             th += w * dt;
@@ -68,8 +71,6 @@ public:
         //Publish odometry message
         publishOdometry(vx, vy, w, currentTime);
 
-        //Updates last time
-        lastTime= currentTime;
     }
 
     void publishOdometry(double vx, double vy, double w, ros::Time currentTime){
@@ -85,7 +86,7 @@ public:
         odometry.pose.pose.position.z = 0.0;
         odometry.pose.pose.orientation = odometryQuaternion;
         //set velocity
-        odometry.child_frame_id = "baseLink";
+        odometry.child_frame_id = "base_link";
         odometry.twist.twist.linear.x = vx;
         odometry.twist.twist.linear.y = vy;
         odometry.twist.twist.linear.z = 0;

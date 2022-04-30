@@ -41,6 +41,8 @@ public :
 	}
 
 	void wheel_statesCallback(const sensor_msgs::JointState::ConstPtr& in_msg){
+		//TODO: Implement the calculation of the wheel speeds from the ticks.
+
 		double vx = (R/4)*(in_msg->velocity[0] + in_msg->velocity[1] + in_msg->velocity[2] + in_msg->velocity[3]) * (1/60.0) * (1/GEAR_RATIO);
 		double vy = (R/4)*(-in_msg->velocity[0] + in_msg->velocity[1] + in_msg->velocity[2] - in_msg->velocity[3]) * (1/60.0) * (1/GEAR_RATIO);
 		double omega  = (R/4)*(1/(W+L))*(- in_msg->velocity[0] + in_msg->velocity[1] - in_msg->velocity[2] + in_msg->velocity[3]) * (1/60.0) * (1/GEAR_RATIO);
