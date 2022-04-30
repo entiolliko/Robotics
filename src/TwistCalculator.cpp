@@ -5,10 +5,13 @@
 #include "sensor_msgs/JointState.h"
 #include <std_msgs/Float64.h>
 #include <vector>
-
+#include <iostream>
+#include <string>
+#include <stdlib.h>
+#include <typeinfo>
 #include "data.h"
 
-class node1{
+class TwistCalculator{
 
 private :
 	ros::NodeHandle n;
@@ -22,11 +25,9 @@ private :
 
 
 public :
-	node1(){
-		this->wheel_states_listener = this-> n.subscribe("/wheel_states",1000,&node1::wheel_statesCallback,this);
+	TwistCalculator(){
+		this->wheel_states_listener = this-> n.subscribe("/wheel_states",1000,&TwistCalculator::wheel_statesCallback,this);
 		this->vel_publisher = this-> n.advertise<geometry_msgs::TwistStamped>("cmd_vel",1000);
-
-		flag = false;
 
 	}
 
@@ -35,23 +36,14 @@ public :
 		ros::Rate loop_rate(10);
 
 		while(ros::ok()){
-			if(flag){
-				this->vel_publisher.publish(out_msg);
-				ROS_INFO("Ho pubblicato Questi Dati");
-			  ROS_INFO("linear vale %f",out_msg.twist.linear.x);
-			  ROS_INFO("linear vale %f",out_msg.twist.linear.y);
-				ROS_INFO("angular vale %f",out_msg.twist.angular.z);
-
-				this->flag = false;
-			}
 			ros::spinOnce();
 		}
 	}
 
 	void wheel_statesCallback(const sensor_msgs::JointState::ConstPtr& in_msg){
-		double vx = (R/4)*(in_msg->velocity[0] + in_msg->velocity[1] + in_msg->velocity[2] + in_msg->velocity[3]) * (1/60) * (1/GEAR_RATIO);
-		double vy = (R/4)*(-in_msg->velocity[0] + in_msg->velocity[1] + in_msg->velocity[2] - in_msg->velocity[3]) * (1/60) * (1/GEAR_RATIO);
-		double omega  = (R/4)*(1/(W+L))*(- in_msg->velocity[0] + in_msg->velocity[1] - in_msg->velocity[2] + in_msg->velocity[3]) * (1/60) * (1/GEAR_RATIO);
+		double vx = (R/4)*(in_msg->velocity[0] + in_msg->velocity[1] + in_msg->velocity[2] + in_msg->velocity[3]) * (1/60.0) * (1/GEAR_RATIO);
+		double vy = (R/4)*(-in_msg->velocity[0] + in_msg->velocity[1] + in_msg->velocity[2] - in_msg->velocity[3]) * (1/60.0) * (1/GEAR_RATIO);
+		double omega  = (R/4)*(1/(W+L))*(- in_msg->velocity[0] + in_msg->velocity[1] - in_msg->velocity[2] + in_msg->velocity[3]) * (1/60.0) * (1/GEAR_RATIO);
 
 		out_msg.header.seq = in_msg->header.seq;
 		out_msg.header.stamp = in_msg->header.stamp;
@@ -60,8 +52,12 @@ public :
 		out_msg.twist.linear = toVector3(vx, vy, 0);
 		out_msg.twist.angular = toVector3(0, 0, omega);
 
+		ROS_INFO("Ho pubblicato Questi Dati");
+		ROS_INFO("linear vale %f", out_msg.twist.linear.x);
+		ROS_INFO("linear vale %f", out_msg.twist.linear.y);
+		ROS_INFO("angular vale %f", out_msg.twist.angular.z);
 
-		this-> flag = true;
+		this->vel_publisher.publish(out_msg);
 	}
 
 
@@ -76,8 +72,8 @@ public :
 };
 
 int main(int argc, char** argv){
-	ros::init(argc,argv,"node1");
+	ros::init(argc,argv,"TwistCalculator");
 
-	node1 test_node;
+	TwistCalculator test_node;
 	test_node.main_loop();
 }
