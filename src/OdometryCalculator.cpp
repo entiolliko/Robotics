@@ -17,7 +17,7 @@ private:
 
     ros::Time lastTime;
     double x = 0.0;
-		double y = 0.0;
+		double y = 0.002;
 		double th = 0.0;
     tf::TransformBroadcaster odom_broadcaster;
 
@@ -29,14 +29,14 @@ public:
         sub = n.subscribe("/cmd_vel", 1000, &OdometryCalculator::computeOdometry, this);
         odom_pub = n.advertise<nav_msgs::Odometry>("/odom", 1000);
 
-        resetPoseService = n.advertiseService("resetposeService" , &OdometryCalculator::resetPose, this);
+        resetPoseService = n.advertiseService("reset" , &OdometryCalculator::resetPose, this);
 
         lastTime = ros::Time::now();
 
     }
 
     void computeOdometry(const geometry_msgs::TwistStamped::ConstPtr& msg){
-        double vx, vy, w, dt;
+        double vx, vy, w, dt, v;
         ros::Time currentTime;
 
         //Reads currentTime from message's header
