@@ -26,7 +26,7 @@ private :
 
 	double w1_old, w2_old, w3_old, w4_old;
 	double vx, vy, omega;
-	double curr_w1, curr_w2, curr_w3, curr_w4;
+
 	double w1_ok, w2_ok, w3_ok, w4_ok;
 	double radpertick;
 	ros::Time t_old, t_new;
@@ -47,7 +47,7 @@ public :
 	  w4_ok = 0.0;
 	  t_old = ros::Time::now();
 	  t_new = ros::Time::now();
-		
+
 	}
 
 
@@ -60,7 +60,7 @@ public :
 	}
 
 	// void calculate_speed_with_formulas(){
-	// 	double vx = (R/4)*(in_msg->velocity[0] + in_msg->velocity[1] + in_msg->velocity[2] + in_msg->velocity[3]) * (1/60.0) * (1/GEAR_RATIO);
+	// 	double vx = (R/4)*(in_msg->velocity[0] + in_msg->velocity[1] + in_msg->;velocity[2] + in_msg->velocity[3]) * (1/60.0) * (1/GEAR_RATIO);
 	// 	double vy = (R/4)*(-in_msg->velocity[0] + in_msg->velocity[1] + in_msg->velocity[2] - in_msg->velocity[3]) * (1/60.0) * (1/GEAR_RATIO);
 	// 	double omega  = (R/4)*(1/(W+L))*(- in_msg->velocity[0] + in_msg->velocity[1] - in_msg->velocity[2] + in_msg->velocity[3]) * (1/60.0) * (1/GEAR_RATIO);
 	//
@@ -82,44 +82,34 @@ public :
 	void wheel_statesCallback(const sensor_msgs::JointState::ConstPtr& in_msg){
 		//TODO: Implement the calculation of the wheel speeds from the ticks.
 
-		if(start){
+		if(!start)
+		{
+			t_new = in_msg->header.stamp;
+			unsigned long delta = t_new.toNSec() - t_old.toNSec();
+			dt =(double) delta / 1000000000.0;
+
+
+			//ROS_INFO("La differenza su ruota 1 vale %f:",curr_w1);
+
+			w1_ok = (in_msg->position[0] - w1_old)*radpertick/dt;
+			w2_ok = (in_msg->position[1] - w2_old)*radpertick/dt;
+			w3_ok = (in_msg->position[2] - w3_old)*radpertick/dt;
+			w4_ok = (in_msg->position[3] - w4_old)*radpertick/dt;
+
+			//ROS_INFO("w1 vale %f:",w1_ok);
+
+			vx = (R/4)*(w1_ok + w2_ok + w3_ok + w4_ok);
+			vy = (R/4)*(-w1_ok + w2_ok + w3_ok - w4_ok);
+			omega  = (R/4)*(1/(W+L))*(- w1_ok + w2_ok - w3_ok + w4_ok);
+
+			t_old = t_new;
+
+		}
+		else if(start){
 			t_old = in_msg->header.stamp;
-  	}
+			start = false;
+		}
 
-
-
-  	else if(!start)
-  	{
-   		t_new = in_msg->header.stamp;
-   		unsigned long delta = t_new.toNSec() - t_old.toNSec();
-   		dt =(double) delta / 1000000000.0;
-
-   //ROS_INFO("delta t: %f", dt);
-   //ROS_INFO("TICK nuovo RUOTA 1 vale %f:",in_msg->position[0]);
-
-	   curr_w1 = in_msg->position[0] - w1_old;
-	   curr_w2 = in_msg->position[1] - w2_old;
-	   curr_w3 = in_msg->position[2] - w3_old;
-	   curr_w4 = in_msg->position[3] - w4_old;
-
-   //ROS_INFO("La differenza su ruota 1 vale %f:",curr_w1);
-
-	   w1_ok = curr_w1*radpertick/dt;
-	   w2_ok = curr_w2*radpertick/dt;
-	   w3_ok = curr_w3*radpertick/dt;
-	   w4_ok = curr_w4*radpertick/dt;
-
-   //ROS_INFO("w1 vale %f:",w1_ok);
-
-	   vx = (R/4)*(w1_ok + w2_ok + w3_ok + w4_ok);
-	   vy = (R/4)*(-w1_ok + w2_ok + w3_ok - w4_ok);
-	   omega  = (R/4)*(1/(W+L))*(- w1_ok + w2_ok - w3_ok + w4_ok);
-
-	   t_old = t_new;
-
-	  }
-
-	  start = false;
 	  out_msg.header.seq = in_msg->header.seq;
 	  out_msg.header.stamp = in_msg->header.stamp;
 	  out_msg.header.frame_id = in_msg->header.frame_id;

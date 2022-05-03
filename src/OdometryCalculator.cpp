@@ -16,12 +16,12 @@ private:
     ros::ServiceServer resetPoseService;
 
     ros::Time lastTime;
-    double x = 0.0;
-		double y = 0.002;
-		double th = 0.0;
+    double x;
+		double y;
+		double th;
     tf::TransformBroadcaster odom_broadcaster;
 
-    int integrationType = 0;
+    int integrationType = 1;
 
 
 public:
@@ -31,12 +31,14 @@ public:
 
         resetPoseService = n.advertiseService("reset" , &OdometryCalculator::resetPose, this);
 
+        x = 0.0;
+        y = 0.0;
+        th = 0.0;
         lastTime = ros::Time::now();
-
     }
 
     void computeOdometry(const geometry_msgs::TwistStamped::ConstPtr& msg){
-        double vx, vy, w, dt, v;
+        double vx, vy, w, dt;
         ros::Time currentTime;
 
         //Reads currentTime from message's header
@@ -56,14 +58,14 @@ public:
 
         //IntegrationintegrationType
         if(integrationType == 0) { //EULER
-            x += vx * cos(th) * dt;
-            y += vy * sin(th) * dt;
-            th += w * dt;
+            x = x + (vx * cos(th) - vy * sin(th)) * dt;
+            y = y + (vx * sin(th) + vy * cos(th)) * dt;
+            th = th + w * dt;
         }
         else if(integrationType == 1){ //RUNGE-KUTTA
-            x += vx * cos(th + w * dt / 2) * dt;
-            y += vy * sin(th + w * dt / 2) * dt;
-            th += w * dt;
+            x = x + (vx * cos(th + w * dt / 2) - vy * sin(th + w * dt / 2)) * dt;
+            y = y + (vy * sin(th + w * dt / 2) + vy * cos(th + w * dt / 2)) * dt;
+            th = th + w * dt;
         }
 
         //Publish tf transformation
