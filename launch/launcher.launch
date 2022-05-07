@@ -1,6 +1,12 @@
 <launch>
     
     <node pkg="project1" type="TwistCalculator" name="TwistCalculator" output="screen" />
+    <node pkg="project1" type="OdometryCalculator" name="OdometryCalculator" output="screen" />
+    <node pkg="project1" type="WheelSpeedCalculator" name="WheelSpeedCalculator" output="screen" />
+    <node pkg="project1" type="Calibration" name="Calibration" output="screen" />
 
+     <node pkg="tf2_ros" type="static_transform_publisher" name="worldToOdom" args="0 0 0 0 0 0 1 world odom" />
+
+     <node type="rviz" name="rviz" pkg="rviz" args="-d $(find project1)/visualization/settings.rviz" />
 
 </launch>
