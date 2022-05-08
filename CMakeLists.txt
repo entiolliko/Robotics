@@ -9,12 +9,13 @@ project(project1)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  #rospy
+  rospy
   std_msgs
   geometry_msgs
   sensor_msgs
   tf
   tf2
+  nav_msgs
   message_generation
   dynamic_reconfigure
 )
@@ -75,6 +76,8 @@ add_service_files(
 generate_messages(
    DEPENDENCIES
    std_msgs
+   nav_msgs
+   geometry_msgs
 )
 
 ################################################
@@ -223,6 +226,8 @@ add_dependencies(TwistCalculator  ${catkin_EXPORTED_TARGETS})
 add_dependencies(TwistCalculator ${PROJECT_NAME}_gencfg)
 
 add_dependencies(WheelSpeedCalculator project1_generate_messages_cpp)
+add_dependencies(Calibration project1_generate_messages_cpp)
+
 add_dependencies(WheelSpeedCalculator  ${catkin_EXPORTED_TARGETS})
 
 add_dependencies(OdometryCalculator ${PROJECT_NAME}_gencfg)
