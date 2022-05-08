@@ -40,7 +40,7 @@ public :
 		vx = 0.0;
 	  vy = 0.0;
 	  omega = 0.0;
-	  radpertick = (2*M_PI)/(42.0*5.0);
+	  radpertick = (2*M_PI)/(CPR*GEAR_RATIO);
 	  w1_ok = 0.0;
 	  w2_ok = 0.0;
 	  w2_ok = 0.0;
@@ -50,7 +50,6 @@ public :
 
 	}
 
-
 	void main_loop(){
 		ros::Rate loop_rate(10);
 
@@ -58,26 +57,6 @@ public :
 			ros::spinOnce();
 		}
 	}
-
-	// void calculate_speed_with_formulas(){
-	// 	double vx = (R/4)*(in_msg->velocity[0] + in_msg->velocity[1] + in_msg->;velocity[2] + in_msg->velocity[3]) * (1/60.0) * (1/GEAR_RATIO);
-	// 	double vy = (R/4)*(-in_msg->velocity[0] + in_msg->velocity[1] + in_msg->velocity[2] - in_msg->velocity[3]) * (1/60.0) * (1/GEAR_RATIO);
-	// 	double omega  = (R/4)*(1/(W+L))*(- in_msg->velocity[0] + in_msg->velocity[1] - in_msg->velocity[2] + in_msg->velocity[3]) * (1/60.0) * (1/GEAR_RATIO);
-	//
-	// 	out_msg.header.seq = in_msg->header.seq;
-	// 	out_msg.header.stamp = in_msg->header.stamp;
-	// 	out_msg.header.frame_id = in_msg->header.frame_id;
-	//
-	// 	out_msg.twist.linear = toVector3(vx, vy, 0);
-	// 	out_msg.twist.angular = toVector3(0, 0, omega);
-	//
-	// 	ROS_INFO("Ho pubblicato Questi Dati");
-	// 	ROS_INFO("linear vale %f", out_msg.twist.linear.x);
-	// 	ROS_INFO("linear vale %f", out_msg.twist.linear.y);
-	// 	ROS_INFO("angular vale %f", out_msg.twist.angular.z);
-	//
-	// 	this->vel_publisher.publish(out_msg);
-	// }
 
 	void wheel_statesCallback(const sensor_msgs::JointState::ConstPtr& in_msg){
 		//TODO: Implement the calculation of the wheel speeds from the ticks.
@@ -88,22 +67,16 @@ public :
 			unsigned long delta = t_new.toNSec() - t_old.toNSec();
 			dt =(double) delta / 1000000000.0;
 
-
-			//ROS_INFO("La differenza su ruota 1 vale %f:",curr_w1);
-
 			w1_ok = (in_msg->position[0] - w1_old)*radpertick/dt;
 			w2_ok = (in_msg->position[1] - w2_old)*radpertick/dt;
 			w3_ok = (in_msg->position[2] - w3_old)*radpertick/dt;
 			w4_ok = (in_msg->position[3] - w4_old)*radpertick/dt;
-
-			//ROS_INFO("w1 vale %f:",w1_ok);
 
 			vx = (R/4)*(w1_ok + w2_ok + w3_ok + w4_ok);
 			vy = (R/4)*(-w1_ok + w2_ok + w3_ok - w4_ok);
 			omega  = (R/4)*(1/(W+L))*(- w1_ok + w2_ok - w3_ok + w4_ok);
 
 			t_old = t_new;
-
 		}
 		else if(start){
 			t_old = in_msg->header.stamp;
@@ -117,18 +90,14 @@ public :
 	  out_msg.twist.linear = toVector3(vx, vy, 0);
 	  out_msg.twist.angular = toVector3(0, 0, omega);
 
-
 	  w1_old = in_msg->position[0];
 	  w2_old = in_msg->position[1];
 	  w3_old = in_msg->position[2];
 	  w4_old = in_msg->position[3];
 
-
 	  this->vel_publisher.publish(out_msg);
 	}
 
-
-	//this function returns three values inside a Vector3 type
 	geometry_msgs::Vector3 toVector3(double a,double b, double c){
 		geometry_msgs::Vector3 tmp;
 		tmp.x = a;

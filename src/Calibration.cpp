@@ -56,7 +56,6 @@ public:
       out_msgs2.th = yaw;
 
       custom_gt_pub.publish(out_msgs2);
-
     }
 
 };
