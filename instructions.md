@@ -1,7 +1,7 @@
 # Robotics Project 1
 **Team members** <br>
 Alen Kaja (10696919) <br>
-Entiol Liko ( 10xxxxxx)
+Entiol Liko (10739568)
 
 # Structure of the package
 
@@ -35,7 +35,7 @@ The node contains also the callback for the service "reset", that sets the pose 
 
    -> **InitialPoseClient**: this node is a client to run the "reset" position service: it handles the request of reset and displays messages of success or failure of the service.
    
-	-> **Calibration**: this is an utility node that publishes messages of type "custom" in order to plot the Ground Truth pose of the robot both with the computed odometry, accordingly on the */customOdom* and the */customGT* topics.
+   -> **Calibration**: this is an utility node that publishes messages of type "custom" in order to plot the Ground Truth pose of the robot both with the computed odometry, accordingly on the */customOdom* and the */customGT* topics.
 
 ## Parameters description
 - X, Y, Theta are three parameters set to zero in the launch file and for different initialization the user can change them in the launch file or call the apposite service.
@@ -66,9 +66,9 @@ It will be possible to check on rviz the robot motion or by opening plotjuggler 
 
 The service can be used with these commands:
 
-->"rosservice call /reset [*your_x*] [*your_y*]  [*your_theta*]" 
+->"rosservice call /reset [*your_x*] [*your_y*] [*your_theta*]" 
 to set the initial pose of the robot equal to the ground truth pose.<br>
 Alternatively you can change these parameters in the launch file.
 
-->"rosrun InitialPoseClient [*your_x*] [*your_y*]  [*your_theta*]", equivalent to the previous command and it uses the InitialPoseClient.
+->"rosrun project1 InitialPoseClient [*your_x*] [*your_y*] [*your_theta*]", equivalent to the previous command and it uses the InitialPoseClient.
 
