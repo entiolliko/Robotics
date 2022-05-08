@@ -33,7 +33,7 @@ public:
         resetPoseService = n.advertiseService("reset" , &OdometryCalculator::resetPose, this);
 
         n.getParam("/X", x);;
-        n.getParam("/Y", y);
+        y = 0.0;//n.getParam("/Y", y);
         n.getParam("/Theta", th);
         lastTime = ros::Time::now();
     }
@@ -60,7 +60,7 @@ public:
         }
         else if(integrationType == 1){ //RUNGE-KUTTA
             x = x + (vx * cos(th + w * dt / 2) - vy * sin(th + w * dt / 2)) * dt;
-            y = y + (vy * sin(th + w * dt / 2) + vy * cos(th + w * dt / 2)) * dt;
+            y = y + (vx * sin(th + w * dt / 2) + vy * cos(th + w * dt / 2)) * dt;
             th = th + w * dt;
             ROS_INFO("Runge-Kutta");
         }
