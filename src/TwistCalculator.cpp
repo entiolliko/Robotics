@@ -40,7 +40,7 @@ public :
 		vx = 0.0;
 	  vy = 0.0;
 	  omega = 0.0;
-	  radpertick = (2*M_PI)/(42.0*5.0);
+	  radpertick = (2*M_PI)/(CPR*GEAR_RATIO);
 	  w1_ok = 0.0;
 	  w2_ok = 0.0;
 	  w2_ok = 0.0;

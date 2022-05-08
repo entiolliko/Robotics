@@ -12,8 +12,7 @@
 class OdometryCalculator {
 
 private:
-    ros::Subscriber sub_to_gt;
-    int i;
+
 
     ros::NodeHandle n; //The handler of the current node
     ros::Subscriber sub; // The subscripter to the /cmd_vel topic
@@ -33,8 +32,7 @@ private:
 
 public:
     OdometryCalculator() {
-        sub_to_gt = n.subscribe("/robot/pose", 1000, &OdometryCalculator::gtCallback, this);
-        i = 0;
+
 
         sub = n.subscribe("/cmd_vel", 1000, &OdometryCalculator::computeOdometry, this);
         odom_pub = n.advertise<nav_msgs::Odometry>("/odom", 1000);
@@ -45,22 +43,6 @@ public:
         y = 0.0;
         th = 0.0;
         lastTime = ros::Time::now();
-    }
-
-    void gtCallback(const geometry_msgs::PoseStamped::ConstPtr& msg){
-      x = msg->pose.position.x;
-      y = msg->pose.position.y;
-
-      tf2::Quaternion q(msg->pose.orientation.x, msg->pose.orientation.y, msg->pose.orientation.z, msg->pose.orientation.w);
-      tf2::Matrix3x3 m(q);
-      double roll, pitch, yaw;
-      m.getRPY(roll, pitch, yaw);
-
-      th = yaw;
-      i = i + 1;
-      if(i == 15){
-        sub_to_gt.shutdown();
-      }
     }
 
     void computeOdometry(const geometry_msgs::TwistStamped::ConstPtr& msg){
