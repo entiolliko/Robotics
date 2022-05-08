@@ -1,91 +1,74 @@
-Barbiero Alessandro (10692413)
-Borsatto Andrea (10628989)
-Cariati Leonardo (10588999)
+# Robotics Project 1
+**Team members** <br>
+Alen Kaja (10696919) <br>
+Entiol Liko ( 10xxxxxx)
 
-STRUCTURE OF THE PACKAGE:
-We provided a package containing different folders:
-- cfg: containing the python file for the dynamic reconfigure of the integration type; this file contains an enum with the two possible type of integration, the default one is Euler integration
+# Structure of the package
 
-- launch: containing the launch file of the project that starts all the necessary nodes, rviz and rqt_reconfigure window:
-    > initial pose of the robot is set by three parameters: - InitialX
-                                                            - InitialY
-                                                            - InitialTheta
-    > the link between world and odom frame is set by a static transformation
-    > the two lateralWheelSync nodes for the two sides of the robot are launched remapping the topics in the correct way and passing a parameter for setting direction of rotation
+We provided a package containing different **folders**:
+- **cfg**: containing the python parameters.cfg file for the dynamic reconfigure of the integration type; <br> 
+ this file contains an enum with two values, the default one is Euler integration, you can switch between Euler and RK
+- **launch**: containing the launch file of the project that starts all the necessary nodes, rviz and rqt_reconfigure window: <br>
+-> the *initial pose* of the robot is set by three parameters X, Y, Theta <br>
+-> the link between *world* and *odom* frame is set by a static transformation <br>
 
-- msg: containing our custom messages:
-	> CustomOdometry.msg is the structure of the message that publishes the computed odometry and the integration method that has been chosen
-	> Speed.msg is the structure of the message that publishes the linear velocity, in m/s, of the wheels. It contains also a header for synchronization
+- **msg**: containing the custom messages:<br>
+-> *custom.msg* is the structure of the message that publishes the x,y and theta of the computed odometry and the Ground Truth pose, in order to compare these values in the Calibration node <br> 
+-> *speeds.msg* is the structure of the message that publishes the linear velocity of the wheels in rpm; <br>
+it contains also a header for synchronization and 4 fields which represent the four wheels: rpm_fl, rpm_fr, rpm_rr, rpm_rr <br>
 
-- rviz: containing the custom configuration of rviz for easy visualization
+- **srv**: containing the reset pose service: <br>
+-> *reset.srv* that changes the pose of the robot to any given pose (X, Y, Theta) <br>
 
-- srv: containing the two services:
-	> reset.srv that resets the x and y positions of the robot to 0
-	> reset_general.srv that changes the pose of the robot to the one sent by the request message
+- **src**: containing the following files (nodes): <br>
+   
+  -> **data**: header file which contains the five given parameters of the robot: the radius, the wheel positions along x and y, the gear ratio and the encoders resolution.
 
-- src: containing the files of the nodes:
-	> LateralWheelSync: this node is used to synchronize the messages coming from motors on one side of the robot;
-	    it synchronizes the messages, computes the average of the RPMs of the motors and then computes
-	    the linear velocity of the corresponding wheel in differential drive approximation; finally it publishes a custom message of type "Speed" on a topic.
-	    This node is launched two times inside the launch file (with appropriate remaps for the topics) because it is used to synchronize
-	    the velocities on the two sides of the skid steering robot and to publish them into "/syncVelocity_l" and "/syncVelocity_r" topics
+  -> **TwistCalculator**: this node is used to listen to the messages coming from the encoders of the robot; it subscribes to the */wheel_states* topic of the bag and it computes the robot linear speeds *Vx*, *Vy* and the angular speed *⍵*; this is performed using the mecanum wheel kinematic model and the wheel velocities are obtained from the encoder ticks provided by the topic; finally it publishes a message of type  "TwistStamped" on the */cmd_vel* topic.
 
-	> GlobalSync: this node is used to synchronize the messages published by the two LateralWheelSync nodes on
-	    "/syncVelocity_l" and "/syncVelocity_r" topics, in order to compute the values of the linear and the angular velocities of the robot
-	     (using the skid steering approximate kinematics) and to publish them as a "TwistStamped" message.
+	-> **OdometryCalculator**: this node is used to compute the odometry of the robot, to publish all the related messages and to expose the service mentioned before.<br>
+The node reads the messages published on topic */cmd_vel* node and based on the value of the param "odomMethod" it computes the odometry of the robot using Euler or Runge-Kutta integration.  After this it publishes the odometry on the */odom* topic and broadcasts the tf transformation.<br>
+For the integration type, the node uses the dynamic reconfigure method to set the integration type; the default value is "Euler" and whenever the user changes the param a callback is executed, changing the value of the field "integrationType" of the class OdometryCalculator.
+The node contains also the callback for the service "reset", that sets the pose of the robot equal to the value x, y and theta that the user passes when calls the service.
+		
+  -> **WheelSpeedCalculator**: this node computes wheel speeds from *Vx*, *Vy*, *⍵* previously calculated in the TwistCalculator node, which is done by reversing the formula used before. It subscribes to the */cmd_vel* topic and publishes custom messages of type "speeds" on topic */wheels_rpm*.
 
-	> AgileXCore: this node is used to compute the odometry of the robot, to publish all the related messages and to expose the two services mentioned before.
-	    The node reads the "TwistStamped" messages published by GlobalSync node and, based on the value of the param "integration",
-	    it computes the odometry of the robot using Euler or Runge-Kutta integration. After this it publishes the odometry on a topic and publishes the tf transformation.
-		For the integration type, the node uses the dynamic reconfigure to set the integration type; the default value is "Euler"
-		and whenever the user changes the param a callback is executed, changing the value of the field "integrationType" of the class Pub_Sub_Odometry.
-		The node exposes also two callbacks for the two services: "resetZero", that set the x and y positions to 0 when the user calls the service;
-		and "resetGeneral", that set the pose of the robot equal to the value x, y and theta that the user passes when calls the service.
-		The node read the initial pose of the robot from the params declared in the launch file and sets the x, y and theta of the robot
+   -> **InitialPoseClient**: this node is a client to run the "reset" position service: it handles the request of reset and displays messages of success or failure of the service.
+   
+	-> **Calibration**: this is an utility node that publishes messages of type "custom" in order to plot the Ground Truth pose of the robot both with the computed odometry, accordingly on the */customOdom* and the */customGT* topics.
 
-	> BaselineCalculator: this node is a utility node built for calculating the apparent baseline for the approximation of the skid steering kinematics.
-	    It calculates the baseline synchronizing the messages from "/syncVelocity_l", "/syncVelocity_r", and "/scout_odom" and using the inverse formula for calculus of the angular velocity.
-	    In order to exclude biased values, the baseline is calculated like the average of the calculated baselines only for value of angular velocity > 0.005.
-	    The outcome of this calculation is an apparent baseline of 1.0467 m.
+## Parameters description
+- X, Y, Theta are three parameters set to zero in the launch file and for different initialization the user can change them in the launch file or call the apposite service.
+- odomMethod is the parameter that can be dynamically reconfigured to change integration method between Euler and RK by setting it to 0 or 1.
 
-    > GearRatioCalculator: this node is a utility node built for calculating the gear ratio of the wheels.
-        It calculates the gear ratio synchronizing the messages from "/scout_odom" and "/odometry" and computing the ratio between the linear velocity given by "/scout_odom" and the linear velocity given by "/odometry" without the manual gear ratio.
-        In order to exclude biased values, the gear ratio is calculated like the average of the calculated gear ratios only for value of linear velocity > 0.
-        The outcome of this calculation is a gear ratio of 1/38.2.
+## TF Tree
+The tf tree is composed of three transformation frames world -> odom ->base_link: a static transformation links the world frame to the odom frame, the relation is thought in order to match the gt_pose data with odom calculation. <br>
+The transformation between odom and base_link is the one responsible for the real localization of the robot in the space.
 
-ROSPARAMS:
-We used rosParameters for the integration type, named "integration"; we created an enum with two integer values: "Euler" = 0 and "Runge_Kutta" = 1
-We also used rosParameters in the launch file to set the initial pose of the robot; AgileXCore node reads the parameters and sets x,y,theta in the in the constructor of Pub_sub_odometry.
-We decided to use 3 params: "InitialX", "InitialY" and "InitialTheta", all set to zero, for different initialization the user can change the parameters in the launch file or call the apposite service.
+## Custom messages structure
+-> *custom.msg*, that is used in Calibration node to  publish the *x*, *y* and *θ* of the computed odometry and the Ground Truth pose. <br>
+-> *speeds.msg*  message that publishes the linear velocity of the wheels in rpm. It contains also a header for synchronization and four float64 values which represent the four wheels: rpm_fl ( front left ), rpm_fr ( front right ), rpm_rr (rear right), rpm_rr (rear left).
 
 
-TF TREE:
-Our tf tree is composed of three transformation frames (world, odom and base_link):
-    > a static transformation links the world frame to the odom frame, the relation is thought in order to match the gt_pose data with odom calculation,
-      however we realize that this transformation fits only for the first bag.
-    > the transformation between odom and base_link is the one responsible for the real localization of the robot in the space
+## How to start/use the code
 
-CUSTOM MESSAGES:
-As previously discussed we used two custom messages:
-	> CustomOdometry, that is used in AgileXCore node to publish the odometry computed with the associated integration type.
-		It is composed by a nav_msgs/Odometry and a std_msgs/String
-
-	> Speed, that is used in LateralWheelSync to publish the linear velocity of the wheel on one side of the robot.
-		It is composed by a header, for the synchronization, and a float64 for the value of the velocity (in m/s)
-
-HOW TO RUN:
 The launch file opens all the necessary tools:
-(You can specify the bag you want to run, inside the launch file, choosing one of the alternatives)
-The command: roslaunch project_1 launcher.launch
-  > starts all the necessary nodes;
-  > opens rviz, that shows the scout_odom(light blue arrow), our odometry(red arrow) read from the "/odometry" topic,
-    the gt_pose(green arrow) and the necessary static transformations;
-  > opens rqt_reconfigure_params window, from where the integration type can be changed
 
-The two services can be used with these commands:
-    > "rosservice call /reset_zero" to reset the position of the robot to (x=0, y=0)
-    > "rosservice call /reset_general -- x y th" to set the pose of the robot equal to the value x, y and th passed as params of the call
+The command "roslaunch project1 launcher.launch" 
+-> starts all the necessary nodes;
+-> opens rviz, that shows the gt_pose ( green arrow), our odometry(red arrow) published from the "/odom" topic.
+-> opens rqt_reconfigure_params GUI window, from where the integration type can be changed.
 
-To set the initial pose of the robot equal to scout_odom pose you can either change the parameters in the launch file or use this commands:
-    > for the 2nd bag: rosservice call /reset_general -- -2.81132697617 0.784711979093 3.0537938
-    > for the 3rd bag: rosservice call /reset_general -- -2.28603390243 -1.44419248415 -1.8231358
+At this point the nodes are ready to receive messages from a rosbag and calculate odometry based on the data.
+A bag can be played by running "rosbag play [my_bag.bag]"
+It will be possible to check on rviz the robot motion or by opening plotjuggler and plot the x, y, theta of the robot
+
+
+The service can be used with these commands:
+
+->"rosservice call /reset [*your_x*] [*your_y*]  [*your_theta*]" 
+to set the initial pose of the robot equal to the ground truth pose.<br>
+Alternatively you can change these parameters in the launch file.
+
+->"rosrun InitialPoseClient [*your_x*] [*your_y*]  [*your_theta*]", equivalent to the previous command and it uses the InitialPoseClient.
+
