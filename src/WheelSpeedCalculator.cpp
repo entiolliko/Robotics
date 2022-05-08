@@ -16,19 +16,13 @@ private :
 	ros::Subscriber robot_speed_listener;
 	ros::Publisher wheel_vel_publisher;
 
-	//create a message to read both velocity and position vectors
 	project1::speeds out_msg;
-
-	bool flag; //TODO: Forse è da togliere se riusciamo a sincronizzare i messaggi.
-
 
 public :
 	WheelSpeedCalculator(){
 		this->robot_speed_listener = this-> n.subscribe("/cmd_vel",10000,&WheelSpeedCalculator::robot_speed_listenerCallback,this);
 		this->wheel_vel_publisher = this-> n.advertise<project1::speeds>("wheels_rpm",1000);
-
 	}
-
 
 	void main_loop(){
 		ros::Rate loop_rate(10);
@@ -50,12 +44,6 @@ public :
 		out_msg.header.frame_id = in_msg->header.frame_id;
 
 		this->wheel_vel_publisher.publish(out_msg);
-		ROS_INFO("Ho pubblicato Questi Dati");
-		ROS_INFO("Front Left vale %f",out_msg.rpm_fl);
-		ROS_INFO("Front Right %f",out_msg.rpm_fr);
-		ROS_INFO("Rear Left %f",out_msg.rpm_rl);
-		ROS_INFO("Rear Right %f",out_msg.rpm_rr);
-
 	}
 
 };

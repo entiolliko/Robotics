@@ -1,6 +1,5 @@
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
-//#include <tf2_ros/transform_broadcaster.h>
 #include <nav_msgs/Odometry.h>
 #include "std_msgs/String.h"
 #include <sstream>
@@ -13,9 +12,8 @@ class OdometryCalculator {
 
 private:
 
-
-    ros::NodeHandle n; //The handler of the current node
-    ros::Subscriber sub; // The subscripter to the /cmd_vel topic
+    ros::NodeHandle n;
+    ros::Subscriber sub;
     ros::Publisher odom_pub;
     ros::ServiceServer resetPoseService;
 
@@ -24,24 +22,19 @@ private:
 		double y;
 		double th;
     tf::TransformBroadcaster odom_broadcaster;
-    //changed tf with tf2
-    //tf2_ros::TransformBroadcaster odom_broadcaster;
 
     int integrationType = 1;
 
-
 public:
     OdometryCalculator() {
-
-
         sub = n.subscribe("/cmd_vel", 1000, &OdometryCalculator::computeOdometry, this);
         odom_pub = n.advertise<nav_msgs::Odometry>("/odom", 1000);
 
         resetPoseService = n.advertiseService("reset" , &OdometryCalculator::resetPose, this);
 
-        x = 0.0;
-        y = 0.0;
-        th = 0.0;
+        n.getParam("/X", x);;
+        n.getParam("/Y", y);
+        n.getParam("/Theta", th);
         lastTime = ros::Time::now();
     }
 
@@ -49,31 +42,27 @@ public:
         double vx, vy, w, dt;
         ros::Time currentTime;
 
-        //Reads currentTime from message's header
         currentTime = msg->header.stamp;
 
         unsigned long Ts_NSec =  currentTime.toNSec() - lastTime.toNSec();
         dt = (double)Ts_NSec / 1000000000.0;
         lastTime = currentTime;
 
-        //Computes dt from last message
-        //dt = (currentTime - lastTime).toSec();
-
-        //Computes reads linear and angular velocities from message
         vx = msg->twist.linear.x;
         vy = msg->twist.linear.y;
         w = msg->twist.angular.z;
 
-        //IntegrationintegrationType
         if(integrationType == 0) { //EULER
             x = x + (vx * cos(th) - vy * sin(th)) * dt;
             y = y + (vx * sin(th) + vy * cos(th)) * dt;
             th = th + w * dt;
+            ROS_INFO("Euler");
         }
         else if(integrationType == 1){ //RUNGE-KUTTA
             x = x + (vx * cos(th + w * dt / 2) - vy * sin(th + w * dt / 2)) * dt;
             y = y + (vy * sin(th + w * dt / 2) + vy * cos(th + w * dt / 2)) * dt;
             th = th + w * dt;
+            ROS_INFO("Runge-Kutta");
         }
 
         //Publish tf transformation
@@ -116,6 +105,7 @@ public:
         odometryTransformation.header.stamp = currentTime;
         odometryTransformation.header.frame_id = "odom";
         odometryTransformation.child_frame_id = "base_link";
+
         //set transformation
         odometryTransformation.transform.translation.x = x;
         odometryTransformation.transform.translation.y = y;
